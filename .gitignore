@@ -1,0 +1,14 @@
+### Laravel ###
+/vendor
+/node_modules
+/public/storage
+
+
+### Homestead ###
+Homestead.yaml
+Homestead.json
+.env*
+
+
+### Vagrant ###
+.vagrant/
