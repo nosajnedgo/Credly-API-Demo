@@ -11,6 +11,6 @@
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', 'AppController@login');
+Route::post('/checklogin', 'AppController@checklogin');
+Route::get('/showbadges', 'AppController@showbadges');
