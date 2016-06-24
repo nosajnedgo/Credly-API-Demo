@@ -50,7 +50,7 @@ class AppController extends Controller
             return redirect('/');
         }
 
-        $userID = 2223400; //$meRequest['body']->data->id;
+        $userID = $meRequest['body']->data->id;
 
         $badgeRequest = $this->credlyRequest('GET', "members/$userID/badges");
         if (!$badgeRequest['success']) {
