@@ -14,6 +14,12 @@ return [
     |
     */
 
+    'credly' => [
+        'url' => 'https://api.credly.com/v1.1/',
+        'key' => env('CREDLY_KEY'),
+        'secret' => env('CREDLY_SECRET'),
+    ],
+
     'mailgun' => [
         'domain' => env('MAILGUN_DOMAIN'),
         'secret' => env('MAILGUN_SECRET'),
