@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Requests;
-use \GuzzleHttp\Client;
+use App\Helpers\Credly;
 use Session;
 
 class AppController extends Controller
@@ -15,72 +15,48 @@ class AppController extends Controller
     	return view('login');
     }
 
-    function checklogin()
+    function checklogin(Credly $credly)
     {
-        $response = $this->credlyRequest('POST', 'authenticate', [ 
-            'auth' => [
-                request()->input('email'), 
-                request()->input('password')
-            ]
-        ]);
-        if ($response['success']) {
-            Session::set('access_token', $response['body']->data->token);
+        $auth = $credly->authenticate(
+            request()->input('email'), 
+            request()->input('password')
+        );
+
+        if ($auth['success']) {
+            Session::set('access_token', $auth['body']->data->token);
             return redirect('/showbadges');
         }
         else {
-            Session::flash('status', $response['body']->meta->message);
+            Session::flash('status', $auth['body']->meta->message);
             return redirect('/')->withInput();
         }
+    }
+
+    function showbadges(Credly $credly)
+    {
+        $me = $credly->me(Session::get('access_token'));
+        if (!$me['success']) {
+            Session::flash('status', $me['body']->meta->message);
+            return redirect('/');
+        }
+
+        $userID = $me['body']->data->id;
+
+        $badges = $credly->badges($userID);
+        if (!$badges['success']) {
+            Session::flash('status', $badges['body']->meta->message);
+            return redirect('/');
+        }
+        return view('showbadges', [
+            'user' => $me['body']->data,
+            'badges' => $badges['body']->data,
+        ]);
     }
 
     function logout()
     {
         Session::forget('access_token');
         return redirect('/');
-    }
-
-
-    function showbadges()
-    {
-        $meRequest = $this->credlyRequest('GET', 'me', [ 
-            'query' => ['access_token' => Session::get('access_token')]
-        ]);
-        if (!$meRequest['success']) {
-            Session::flash('status', $meRequest['body']->meta->message);
-            return redirect('/');
-        }
-
-        $userID = $meRequest['body']->data->id;
-
-        $badgeRequest = $this->credlyRequest('GET', "members/$userID/badges");
-        if (!$badgeRequest['success']) {
-            Session::flash('status', $meRequest['body']->meta->message);
-            return redirect('/');
-        }
-        return view('showbadges', [
-            'user' => $meRequest['body']->data,
-            'badges' => $badgeRequest['body']->data,
-        ]);
-    }
-
-
-    private function credlyRequest($method, $path, $options = [])
-    {
-    	$client = new \GuzzleHttp\Client([
-    		'base_uri' => config('services.credly.url')
-    	]);
-    	$options = array_merge([
-    		'headers' => [
-		        'X-Api-Key' => config('services.credly.key'),
-		        'X-Api-Secret' => config('services.credly.secret'),
-       		],
-            'http_errors' => false,
-    	], $options);
-        $response = $client->request($method, $path, $options);
-        return [
-            'success' => $response->getStatusCode() == 200,
-            'body' => json_decode($response->getBody())
-        ];
     }
 
 }
